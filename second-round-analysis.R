@@ -64,6 +64,10 @@ Y = results$avg
 B = sigma^2 / (sigma^2 + tau^2)
 posterior_mean = B * mu + (1 - B) * Y
 posterior_se = sqrt(1 / ((1 / sigma^2) + (1 / tau^2)))
-c(posterior_mean - (posterior_se * qnorm(0.975)), 
+d_hat_ci = c(posterior_mean - (posterior_se * qnorm(0.975)), 
   posterior_mean + (posterior_se * qnorm(0.975)))
-1 - pnorm(0, posterior_mean, posterior_se)
+d_hat = 1 - pnorm(0, posterior_mean, posterior_se)
+X = rnorm(1000, posterior_mean, posterior_se)
+X %>% 
+  ggplot(aes(x = X)) + 
+  stat_function(fun = dnorm)
