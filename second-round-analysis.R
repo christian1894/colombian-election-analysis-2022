@@ -46,6 +46,8 @@ second_round_dataframe = clean_second_round_dataframe(second_round_dataframe)
 
 # We will provide an estimate for the proportion of votes for Gustavo Petro
 # let's make an estimate of the spread mean, se and a combined ci
+# Note: If more polling data is provided we should consider having a single
+# poll per pollster or source
 results = second_round_dataframe %>%
   summarize(avg = mean(spread), se = sd(spread)/sqrt(length(spread))) %>%
   mutate(start = avg - (qnorm(0.975) * se), end = avg + (qnorm(0.975) * se))
@@ -65,5 +67,3 @@ posterior_se = sqrt(1 / ((1 / sigma^2) + (1 / tau^2)))
 c(posterior_mean - (posterior_se * qnorm(0.975)), 
   posterior_mean + (posterior_se * qnorm(0.975)))
 1 - pnorm(0, posterior_mean, posterior_se)
-
-View(second_round_dataframe)
