@@ -2,6 +2,7 @@ library(rvest)
 library(httr)
 library(stringr)
 library(tidyverse)
+library(ggridges)
 options(digits = 3)
 
 # first_round_table = web_page %>% html_element(".mw-parser-output > div:nth-child(18) > table:nth-child(1)")
@@ -67,7 +68,25 @@ posterior_se = sqrt(1 / ((1 / sigma^2) + (1 / tau^2)))
 d_hat_ci = c(posterior_mean - (posterior_se * qnorm(0.975)), 
   posterior_mean + (posterior_se * qnorm(0.975)))
 d_hat = 1 - pnorm(0, posterior_mean, posterior_se)
-X = rnorm(1000, posterior_mean, posterior_se)
-X %>% 
-  ggplot(aes(x = X)) + 
-  stat_function(fun = dnorm)
+
+results = as.data.frame(rnorm(1000, posterior_mean, posterior_se))
+colnames(results) = "spread"
+results = results %>%
+  mutate(petro_wins = spread > 0)
+
+winner_plot = results %>% 
+  ggplot(aes(spread, fill = petro_wins)) + 
+  geom_histogram(binwidth = 0.01, color = "black") +
+  geom_vline(xintercept = 0, linetype = "dashed", col = "red") +
+  labs(x = NULL,
+       y = NULL,
+       fill = "Winner",
+       title ="2022 Colombian Election Second Round Winner",
+       caption = paste("Last Updated: ", Sys.Date(), " - Source: Art of Code"),
+       alt = "2022 Colombian Election Second Round Winner") +
+  scale_fill_discrete(breaks=c("FALSE", "TRUE"),
+                           labels=c("Gutiérrez", "Petro")) +
+  theme(axis.text.x = element_blank(), 
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
