@@ -3,14 +3,22 @@ library(httr)
 library(stringr)
 library(tidyverse)
 library(ggridges)
+library(readr)
 options(digits = 3)
 
 # first_round_table = web_page %>% html_element(".mw-parser-output > div:nth-child(18) > table:nth-child(1)")
 # first_round_dataframe = html_table(first_round_table)
 
-url = "https://es.wikipedia.org/wiki/Anexo:Sondeos_de_intenci%C3%B3n_de_voto_para_las_elecciones_presidenciales_de_Colombia_de_2022"
-web_page =  url %>% httr::GET(config = httr::config(ssl_verifypeer = FALSE)) %>% 
-  read_html() 
+dataframe_name = "second-round-polls.csv"
+fetch_remote_dataframe = function() {
+  url = "https://es.wikipedia.org/wiki/Anexo:Sondeos_de_intenci%C3%B3n_de_voto_para_las_elecciones_presidenciales_de_Colombia_de_2022"
+  web_page =  url %>% httr::GET(config = httr::config(ssl_verifypeer = FALSE)) %>% 
+    read_html() 
+  second_round_table_css_selector = "table.wikitable:nth-child(37)"
+  second_round_table = web_page %>% html_element(second_round_table_css_selector)
+  second_round_dataframe = html_table(second_round_table)
+  return(second_round_dataframe)
+}
 clean_second_round_dataframe = function(second_round_dataframe) {
   remove_number_from_pollster_name = function(pollster_name) {
     return(str_replace(pollster_name, regex("\\[[:digit:]+]"), ""))
@@ -39,17 +47,22 @@ clean_second_round_dataframe = function(second_round_dataframe) {
     select(pollster, sample_size, date, petro, gutierrez, spread, source)
   return(second_round_dataframe)
 }
-
-second_round_table_css_selector = "table.wikitable:nth-child(37)"
-second_round_table = web_page %>% html_element(second_round_table_css_selector)
-second_round_dataframe = html_table(second_round_table)
-second_round_dataframe = clean_second_round_dataframe(second_round_dataframe)
+save_dataframe = function(dataframe, filename) {
+  write.csv(dataframe, file = filename, row.names=FALSE)
+  print("Dataframe saved")
+}
+get_second_round_dataframe = function() {
+  dataframe = fetch_remote_dataframe()
+  dataframe = clean_second_round_dataframe(dataframe)
+  return(dataframe)
+}
+second_round_dataframe = as.data.frame(read_csv(dataframe_name))
 
 # We will provide an estimate for the proportion of votes for Gustavo Petro
 # let's make an estimate of the spread mean, se and a combined ci
 # Note: If more polling data is provided we should consider having a single
 # poll per pollster or source
-results = second_round_dataframe %>%
+combined_estimates = second_round_dataframe %>%
   summarize(avg = mean(spread), se = sd(spread)/sqrt(length(spread))) %>%
   mutate(start = avg - (qnorm(0.975) * se), end = avg + (qnorm(0.975) * se))
 
@@ -60,8 +73,8 @@ historical_spread_mean = 0.18
 mu = 0
 tau = historical_spread_mean
 general_bias = 0.025 # can be estimated later with historical polling data
-sigma = sqrt((results$se) ^ 2 + (general_bias ^ 2))
-Y = results$avg
+sigma = sqrt((combined_estimates$se) ^ 2 + (general_bias ^ 2))
+Y = combined_estimates$avg
 B = sigma^2 / (sigma^2 + tau^2)
 posterior_mean = B * mu + (1 - B) * Y
 posterior_se = sqrt(1 / ((1 / sigma^2) + (1 / tau^2)))
