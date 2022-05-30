@@ -4,6 +4,7 @@ library(stringr)
 library(tidyverse)
 library(ggridges)
 library(readr)
+library(lubridate)
 options(digits = 3)
 
 # first_round_table = web_page %>% html_element(".mw-parser-output > div:nth-child(18) > table:nth-child(1)")
@@ -14,7 +15,7 @@ fetch_remote_dataframe = function() {
   url = "https://es.wikipedia.org/wiki/Anexo:Sondeos_de_intenci%C3%B3n_de_voto_para_las_elecciones_presidenciales_de_Colombia_de_2022"
   web_page =  url %>% httr::GET(config = httr::config(ssl_verifypeer = FALSE)) %>% 
     read_html() 
-  second_round_table_css_selector = "table.wikitable:nth-child(37)"
+  second_round_table_css_selector = "table.wikitable:nth-child(27)"
   second_round_table = web_page %>% html_element(second_round_table_css_selector)
   second_round_dataframe = html_table(second_round_table)
   return(second_round_dataframe)
@@ -28,23 +29,40 @@ clean_second_round_dataframe = function(second_round_dataframe) {
     decimal_value = str_replace(decimal_value, ",", ".")
     return(as.numeric(decimal_value)/ 100)
   }
-  add_spread_estimate = function(dataframe) {
-    dataframe = dataframe %>% 
-      mutate(spread = petro - gutierrez)
+  format_date = function(date) {
+    return(str_split(date, "al ")[[1]][2])
+  }
+  add_spread_estimate = function(second_round_dataframe) {
+    second_round_dataframe = second_round_dataframe %>% 
+      mutate(spread = petro - hernandez)
   }
   
+  remove_unused_rows = function() {
+    return(second_round_dataframe[-c(1,1),])
+  }
+  select_current_month_polls = function(second_round_dataframe) {
+    now = Sys.Date()
+    beginning_osef_month = floor_date(ymd(now), 'month')
+    second_round_dataframe = second_round_dataframe %>%
+      filter(as_date(dmy(date)) >= beginning_of_month)
+    return(second_round_dataframesa)
+  }
+  
+  second_round_dataframe = remove_unused_rows()
   second_round_dataframe_headers = 
-    c("pollster", "date", "sample_size", "gutierrez", "petro", "blank_vote", "none", "no_answer", "moe", "source")
+    c("pollster", "date", "sample_size", "moe", "petro", "hernandez", "blank_vote", "none", "no_answer", "source")
   colnames(second_round_dataframe) = second_round_dataframe_headers
   second_round_dataframe = second_round_dataframe %>%
     mutate(source = remove_number_from_pollster_name(as.character(source)))
-  numeric_columns = c("gutierrez", "petro", "blank_vote", "none", "no_answer", "moe")
+  numeric_columns = c("hernandez", "petro", "blank_vote", "none", "no_answer", "moe")
   for (column in numeric_columns) {
     second_round_dataframe[column] = sapply(second_round_dataframe[column], percentage_value_to_decimal)
   }
   second_round_dataframe = add_spread_estimate(second_round_dataframe)
+  second_round_dataframe$date = sapply(second_round_dataframe$date, format_date)
+  second_round_dataframe = select_current_month_polls(second_round_dataframe)
   second_round_dataframe = second_round_dataframe %>% 
-    select(pollster, sample_size, date, petro, gutierrez, spread, source)
+    select(pollster, sample_size, date, petro, hernandez, spread, source)
   return(second_round_dataframe)
 }
 save_dataframe = function(dataframe, filename) {
@@ -98,7 +116,7 @@ winner_plot = results %>%
        caption = paste("Last Updated: ", Sys.Date(), " - Source: Art of Code"),
        alt = "2022 Colombian Election Second Round Winner") +
   scale_fill_discrete(breaks=c("FALSE", "TRUE"),
-                           labels=c("Gutiérrez", "Petro")) +
+                           labels=c("Rodolfo Hernández", "Gustavo Petro")) +
   theme(axis.text.x = element_blank(), 
         axis.ticks.x = element_blank(),
         axis.text.y = element_blank(),
