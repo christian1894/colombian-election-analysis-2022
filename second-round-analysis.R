@@ -15,7 +15,7 @@ fetch_remote_dataframe = function() {
   url = "https://es.wikipedia.org/wiki/Anexo:Sondeos_de_intenci%C3%B3n_de_voto_para_las_elecciones_presidenciales_de_Colombia_de_2022"
   web_page =  url %>% httr::GET(config = httr::config(ssl_verifypeer = FALSE)) %>% 
     read_html() 
-  second_round_table_css_selector = "table.wikitable:nth-child(27)"
+  second_round_table_css_selector = "table.wikitable:nth-child(26)"
   second_round_table = web_page %>% html_element(second_round_table_css_selector)
   second_round_dataframe = html_table(second_round_table)
   return(second_round_dataframe)
@@ -42,10 +42,10 @@ clean_second_round_dataframe = function(second_round_dataframe) {
   }
   select_current_month_polls = function(second_round_dataframe) {
     now = Sys.Date()
-    beginning_osef_month = floor_date(ymd(now), 'month')
+    beginning_of_month = floor_date(ymd(now), 'month')
     second_round_dataframe = second_round_dataframe %>%
       filter(as_date(dmy(date)) >= beginning_of_month)
-    return(second_round_dataframesa)
+    return(second_round_dataframe)
   }
   
   second_round_dataframe = remove_unused_rows()
@@ -74,7 +74,14 @@ get_second_round_dataframe = function() {
   dataframe = clean_second_round_dataframe(dataframe)
   return(dataframe)
 }
+
 second_round_dataframe = as.data.frame(read_csv(dataframe_name))
+
+# Avoiding Pollster Bias - One Poll Per Pollster
+second_round_dataframe = second_round_dataframe %>%
+  group_by(source) %>%
+  filter(date == max(date)) %>%
+  ungroup()
 
 # We will provide an estimate for the proportion of votes for Gustavo Petro
 # let's make an estimate of the spread mean, se and a combined ci
@@ -90,7 +97,7 @@ historical_spread_mean = 0.18
 # Bayes Theorem
 mu = 0
 tau = historical_spread_mean
-general_bias = 0.025 # can be estimated later with historical polling data
+general_bias = 0.0535 # estimated using 1994-2018 polling data
 sigma = sqrt((combined_estimates$se) ^ 2 + (general_bias ^ 2))
 Y = combined_estimates$avg
 B = sigma^2 / (sigma^2 + tau^2)

@@ -28,11 +28,17 @@ This statistical model attempts to make a probabilistic statement about Gustavo 
 ```
 
 ## Notes
-
 - Polling data was extracted from Wikipedia.    
 - A historical spread was measured using past election results(1994-2018).
 - This model predicts a winner if the election was done today(due to the time effect in opinion polls).
-- A general bias term of 2.5% was added(as seen on USA poll data) but a proper estimate with Colombian data may be added later.
+- A general bias term of 5.3% was added using past election and
+polling results(1994-2018).
+
+## Blog
+- https://artofcode.tech/who-will-win-the-2022-colombian-election-according-to-statistics/
+
+## Model
+- https://github.com/christianpaez/colombian-election-analysis-2022
 
 ## References
 - https://es.wikipedia.org/wiki/Elecciones_presidenciales_de_Colombia_de_1994
