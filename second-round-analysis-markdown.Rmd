@@ -1,0 +1,45 @@
+---
+author: "By: Christian Páez"
+date: "Last updated: `r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+source("second-round-analysis.R", local = knitr::knit_global())
+```
+---
+title: "Gustavo Petro has a `r round(d_hat * 100)`% chance of winning the 2022 presidential election(Second Round)"
+---
+
+This statistical model attempts to make a probabilistic statement about Gustavo Petro's chances of winning the 2022 Colombian Presidential Election(Second round), this was accomplished using public polling data, statistical inference, the Bayes theorem and some analysis of previous elections.
+
+##
+
+```{r, include=TRUE, echo=FALSE, fig.width=7}
+  winner_plot
+```
+
+## Notes
+
+- Polling data was extracted from Wikipedia.    
+- A historical spread was measured using past election results(1994-2018).
+- This model predicts a winner if the election was done today(due to the time effect in opinion polls).
+- A general bias term of 2.5% was added(as seen on USA poll data) but a proper estimate with Colombian data may be added later.
+
+## References
+- https://es.wikipedia.org/wiki/Elecciones_presidenciales_de_Colombia_de_1994
+- https://es.wikipedia.org/wiki/Elecciones_presidenciales_de_Colombia_de_1998
+- https://es.wikipedia.org/wiki/Elecciones_presidenciales_de_Colombia_de_2002
+- https://es.wikipedia.org/wiki/Elecciones_presidenciales_de_Colombia_de_2006
+- https://es.wikipedia.org/wiki/Elecciones_presidenciales_de_Colombia_de_2010
+- https://es.wikipedia.org/wiki/Elecciones_presidenciales_de_Colombia_de_2014
+- https://es.wikipedia.org/wiki/Elecciones_presidenciales_de_Colombia_de_2018
+- https://es.wikipedia.org/wiki/Anexo:Sondeos_de_intención_de_voto_para_las_elecciones_presidenciales_de_Colombia_de_2022
